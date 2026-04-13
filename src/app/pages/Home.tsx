@@ -1,551 +1,365 @@
 import { motion, useScroll, useTransform } from 'motion/react';
-import { Github, Linkedin, Mail, Award } from 'lucide-react';
-import { SwimmingWhales } from '../components/SwimmingWhales';
-import { HeroWhale } from '../components/HeroWhale';
-import { OceanFloor } from '../components/OceanFloor';
+import { Github, Linkedin, Mail } from 'lucide-react';
+import { useRef } from 'react';
 import { DiveIntro } from '../components/DiveIntro';
-import { SectionFade } from '../components/SectionFade';
-import { ParallaxSection } from '../components/ParallaxSection';
-import { useRef, useState } from 'react';
+import { OceanFloor } from '../components/OceanFloor';
+import { SwimmingWhales } from '../components/SwimmingWhales';
+import { OceanWaves, HeroWaves } from '../components/OceanWaves';
 
-const whaleQuotes = [
-  "오늘도 깊이 다이브 중... 🫧",
-  "커밋은 꾸준히, 바다처럼 넓게!",
-  "버그를 삼켜버리겠어! 🐋",
-  "코드의 바다에서 헤엄치는 중~",
-  "git push origin ocean 🌊",
-  "오류의 심해를 탐험 중...",
+/* ── data ── */
+const timeline = [
+  {
+    date: '2021 — Present',
+    name: '상명대학교',
+    role: '정보보안공학과 · Undergraduate',
+    desc: '정보보안공학 학부 재학. 시스템 보안, 네트워크 보안, 암호학 심화 학습 중.',
+  },
+  {
+    date: 'Jun 2025 — Feb 2026',
+    name: 'BoB (Best of the Best)',
+    role: 'Program Graduate',
+    desc: '실전 보안 훈련 프로그램 수료. 취약점 분석, 침투 테스트, OT 보안 집중 훈련.',
+  },
+  {
+    date: 'Jan 2026 — Feb 2026',
+    name: '학부 연구 인턴',
+    role: 'Research Student',
+    desc: 'AI 가드레일 및 LLM jailbreak 기법 연구. 보안 취약점 분석 및 대응 방안 도출.',
+  },
 ];
 
+const projects = [
+  {
+    idx: '001',
+    name: 'SLM-based OT Solution',
+    desc: 'SLM 기반 OT 보안 솔루션. 실전 방어와 응용 보안 아키텍처에 집중한 Best of the Best 수상 프로젝트.',
+    tags: ['Security', 'OT', 'SLM', 'BoB'],
+  },
+  {
+    idx: '002',
+    name: 'AI Guardrail 우회 연구',
+    desc: 'LLM 보안의 AI 가드레일을 우회하는 jailbreak 기법 분석 및 대응 방안 연구.',
+    tags: ['AI', 'LLM', 'Research'],
+  },
+  {
+    idx: '003',
+    name: 'Personal Blog — DeepSea',
+    desc: '심해와 고래 테마의 개인 개발 블로그. React + Motion 기반 몰입형 UX.',
+    tags: ['React', 'TypeScript', 'Motion'],
+  },
+];
+
+const posts = [
+  { date: '2026.04.10', cat: 'Development',       title: 'AI Guardrail 우회 기법 연구',   excerpt: 'LLM 보안 Guardrail을 우회하는 jailbreak 기법 분석.', time: '5 min' },
+  { date: '2026.04.05', cat: 'Technical Document', title: 'OT 보안의 이해',               excerpt: 'OT 환경 보안 위협과 대응 방안 정리.',           time: '8 min' },
+  { date: '2026.03.28', cat: 'Development',        title: 'SLM 기반 보안 아키텍처',       excerpt: '소형 언어 모델 기반 실시간 보안 모니터링.',      time: '6 min' },
+  { date: '2026.03.20', cat: 'Paper',              title: 'BoB 프로그램 회고',            excerpt: 'Best of the Best 수료 후기 및 배운 것들.',      time: '10 min' },
+  { date: '2026.03.15', cat: 'CTF',               title: 'Pwnable.kr Writeup',           excerpt: '고난이도 문제 상세 풀이 정리.',                 time: '7 min' },
+];
+
+/* ── reusable reveal wrapper ── */
+function Reveal({ children, delay = 0, x = 0 }: { children: React.ReactNode; delay?: number; x?: number }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20, x }}
+      whileInView={{ opacity: 1, y: 0, x: 0 }}
+      viewport={{ once: true, margin: '-60px' }}
+      transition={{ duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ── section heading ── */
+function SectionHead({ num, title, italic }: { num: string; title: string; italic: string }) {
+  return (
+    <div className="mb-14">
+      <p className="text-[9px] tracking-[0.48em] text-[#c4ddf0]/22 mb-3">{num}</p>
+      <h2
+        className="leading-none tracking-tight text-[#c4ddf0]"
+        style={{ fontFamily: "'Syne', sans-serif", fontSize: 'clamp(34px, 5vw, 58px)', letterSpacing: '-0.03em', fontWeight: 700 }}
+      >
+        {title} <em className="text-[#5ba3cc] not-italic">{italic}</em>
+      </h2>
+    </div>
+  );
+}
+
 const DEPTH = {
-  surface: '#4a6e8a',
-  shallow: '#3d5f78',
-  mid: '#304d63',
-  deep: '#243d50',
-  abyss: '#182d3e',
-  trench: '#0e1f2d',
+  sandTop:  '#e6d5b8',
+  sandBot:  '#cba276',
+  surface:  '#0273a5', // Surface water, starts at bottom of waves
+  shallow:  '#01476d', // Career - darker than before
+  mid:      '#002238', // Projects
+  deep:     '#000b14', // Posts
+  abyss:    '#000000',
 };
 
 export function Home() {
   const heroRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] });
-  const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
+  const heroY       = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-
-  const [quoteIndex, setQuoteIndex] = useState(0);
-  const [showQuote, setShowQuote] = useState(false);
-
-  const handleWhaleClick = () => {
-    setQuoteIndex((i) => (i + 1) % whaleQuotes.length);
-    setShowQuote(true);
-    setTimeout(() => setShowQuote(false), 2500);
-  };
-
-  const categoryStats = [
-    { name: 'Development', count: 8, icon: '💻' },
-    { name: 'CTF-Wargame', count: 1, icon: '🚩' },
-    { name: 'BugBounty', count: 0, icon: '🐛' },
-    { name: 'Technical Document', count: 6, icon: '📚' },
-    { name: 'Paper-Conference', count: 5, icon: '📝' },
-    { name: 'Contest-Certification', count: 1, icon: '🏆' },
-  ];
-
-  const totalPosts = categoryStats.reduce((sum, cat) => sum + cat.count, 0);
-
-  const project = {
-    title: 'SLM-based OT Solution',
-    badge: 'BEST OF THE BEST',
-    description: 'An OT security solution based on SLM, focused on practical defense and applied security architecture.',
-    tags: ['Security', 'OT', 'SLM'],
-  };
-
-  const timeline = [
-    { date: '2021 - Present', title: 'Sangmyung University', role: 'Undergraduate Student', description: 'Entered the Department of Information Security Engineering at Sangmyung University.', icon: '🎓', creature: '🐠' },
-    { date: 'Jun. 2025 - Feb. 2026', title: 'BoB (Best of the Best)', role: 'Program Graduate', description: 'Completed the BoB program with focused training in practical security', icon: '🛡️', creature: '🐡' },
-    { date: 'Jan. 2026 - Feb. 2026', title: 'Undergraduate Research Intern', role: 'Research Student', description: 'Studied AI guardrails and jailbreak techniques as part of an undergraduate research program.', icon: '🔬', creature: '🦑' },
-  ];
 
   return (
     <>
       <DiveIntro />
 
-      <div className="min-h-screen relative overflow-x-hidden">
+      <div className="min-h-screen overflow-x-hidden" style={{ background: `linear-gradient(180deg, ${DEPTH.sandTop} 0%, ${DEPTH.sandBot} 100%)` }}>
         <SwimmingWhales />
 
-        {/* ===== HERO — Surface ===== */}
+        {/* ══ HERO ══ */}
         <section
           ref={heroRef}
-          className="relative min-h-[100vh] flex items-center justify-center pt-20 overflow-hidden"
-          style={{ background: `linear-gradient(180deg, ${DEPTH.surface} 0%, ${DEPTH.shallow} 100%)` }}
+          className="relative min-h-screen flex flex-col justify-end overflow-hidden bg-transparent"
         >
-          {/* Water surface caustics */}
-          <div className="absolute top-0 left-0 right-0 h-32 overflow-hidden opacity-[0.04]">
-            <motion.div
-              className="absolute inset-0"
-              style={{
-                background: 'repeating-conic-gradient(rgba(189,221,252,0.3) 0%, transparent 8%, rgba(189,221,252,0.2) 15%)',
-                backgroundSize: '80px 80px',
-                filter: 'blur(8px)',
-              }}
-              animate={{ x: [-30, 30, -30], y: [-15, 15, -15] }}
-              transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          </div>
+          {/* Animated Hero Waves */}
+          {/* We remove HeroWaves because Hero is now sand. Instead we just have OceanWaves at the bottom */}
 
-          {/* Light rays */}
-          {[12, 28, 45, 62, 80].map((left, i) => (
-            <motion.div
-              key={i}
-              className="absolute top-0"
-              style={{
-                left: `${left}%`,
-                height: '70%',
-                width: `${40 + i * 12}px`,
-                background: `linear-gradient(180deg, rgba(189,221,252,${0.06 + i * 0.015}) 0%, transparent 80%)`,
-                filter: 'blur(20px)',
-                transform: `rotate(${-3 + i * 2}deg)`,
-                transformOrigin: 'top center',
-              }}
-              animate={{ opacity: [0.3, 0.7, 0.3] }}
-              transition={{ duration: 5 + i * 1.2, repeat: Infinity, delay: i * 0.6 }}
-            />
-          ))}
+          {/* SVG Parallax Wave layers (Bottom) - crashing onto the sand */}
+          <OceanWaves />
 
-          {/* Floating plankton */}
-          {[...Array(15)].map((_, i) => (
-            <motion.div
-              key={`p-${i}`}
-              className="absolute rounded-full bg-[#BDDDFC]"
-              style={{ width: 1.5 + Math.random() * 2.5, height: 1.5 + Math.random() * 2.5, left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%` }}
-              animate={{ y: [-20, 25, -20], x: [-12, 12, -12], opacity: [0, 0.35, 0] }}
-              transition={{ duration: 6 + Math.random() * 6, repeat: Infinity, delay: Math.random() * 5 }}
-            />
-          ))}
+          {/* vignette */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ background: 'radial-gradient(ellipse 75% 85% at 50% 50%,transparent 25%,rgba(203,162,118,0.3) 100%)' }}
+          />
 
-          <motion.div className="relative z-10 max-w-3xl mx-auto px-6 text-center" style={{ y: heroY, opacity: heroOpacity }}>
-            <motion.div
-              initial={{ opacity: 0, y: 40 }}
+          {/* name content — flush to bottom */}
+          <motion.div
+            className="relative z-20 px-11 pb-14"
+            style={{ y: heroY, opacity: heroOpacity }}
+          >
+            <motion.p
+              className="text-[9px] tracking-[0.42em] mb-4 font-bold"
+              style={{ color: '#013a5a' }}
+              initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1, delay: 3.5, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ delay: 0.3, duration: 0.8 }}
             >
-              <div className="relative inline-block cursor-pointer" onClick={handleWhaleClick}>
-                <HeroWhale />
-                <AnimatedQuote show={showQuote} text={whaleQuotes[quoteIndex]} />
-                <motion.span
-                  className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] text-[#BDDDFC]/30"
-                  animate={{ opacity: [0, 0.5, 0] }}
-                  transition={{ duration: 3, repeat: Infinity, delay: 6 }}
-                >
-                  click me!
-                </motion.span>
-              </div>
+              Security Researcher · Developer
+            </motion.p>
 
-              <h1 className="text-4xl md:text-6xl font-bold mb-3 text-[#BDDDFC]">개발자 이름</h1>
-              <p className="text-lg text-[#88BDF2]/80 mb-2">Security Researcher</p>
-              <motion.p
-                className="text-sm text-[#BDDDFC]/30 mb-8 max-w-md mx-auto"
-                animate={{ opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 5, repeat: Infinity }}
-              >
-                깊은 바다처럼 깊이 있는 개발을 추구합니다.
-              </motion.p>
+            <motion.h1
+              className="leading-[.9] tracking-tight text-[#012238] mb-5"
+              style={{
+                fontFamily: "'Syne', sans-serif",
+                fontSize: 'clamp(60px, 11vw, 120px)',
+                letterSpacing: '-0.04em',
+                fontWeight: 800,
+              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.9 }}
+            >
+              <em className="not-italic" style={{ color: '#0273a5' }}>이상호</em>
+            </motion.h1>
 
-              <div className="flex items-center justify-center gap-4">
-                {[
-                  { href: 'https://github.com', icon: Github, label: 'GitHub' },
-                  { href: 'https://linkedin.com', icon: Linkedin, label: 'LinkedIn' },
-                  { href: 'mailto:hello@example.com', icon: Mail, label: 'Email' },
-                ].map((item, i) => (
-                  <motion.a
-                    key={item.label}
-                    href={item.href}
-                    target={item.label !== 'Email' ? '_blank' : undefined}
-                    rel="noopener noreferrer"
-                    className="p-3 text-[#BDDDFC]/40 hover:text-[#BDDDFC] transition-colors bg-[#BDDDFC]/5 rounded-full hover:bg-[#BDDDFC]/10 border border-[#88BDF2]/10 hover:border-[#88BDF2]/30"
-                    whileHover={{ scale: 1.15, y: -3 }}
-                    whileTap={{ scale: 0.95 }}
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 3.8 + i * 0.1 }}
-                  >
-                    <item.icon className="w-5 h-5" />
-                  </motion.a>
-                ))}
-              </div>
-            </motion.div>
+            <motion.p
+              className="text-[10px] tracking-[0.3em] mb-10 font-bold"
+              style={{ color: '#01476d' }}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8, duration: 0.8 }}
+            >
+              정보보안 · 풀스택 개발 · 심해 탐험가
+            </motion.p>
 
-            {/* Scroll indicator */}
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 5 }}
-              className="absolute -bottom-20 left-1/2 -translate-x-1/2"
+              className="flex gap-3"
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 1, duration: 0.8 }}
             >
-              <motion.div
-                animate={{ y: [0, 12, 0] }}
-                transition={{ repeat: Infinity, duration: 2.5, ease: 'easeInOut' }}
-                className="flex flex-col items-center gap-2"
-              >
-                <span className="text-[10px] tracking-[0.3em] text-[#BDDDFC]/20 uppercase">Dive deeper</span>
-                <svg width="24" height="20" viewBox="0 0 24 20" className="text-[#6A89A7]/40">
-                  <path d="M12,0 Q6,8 2,12 Q6,10 12,14 Q18,10 22,12 Q18,8 12,0Z" fill="currentColor" />
-                </svg>
-              </motion.div>
+              {[
+                { href: 'https://github.com',     icon: Github,   label: 'GitHub'   },
+                { href: 'https://linkedin.com',   icon: Linkedin, label: 'LinkedIn' },
+                { href: 'mailto:you@example.com', icon: Mail,     label: 'Email'    },
+              ].map(({ href, icon: Icon, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  target={label !== 'Email' ? '_blank' : undefined}
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 text-[9px] tracking-[0.22em] border px-4 py-2.5 transition-all duration-300 uppercase font-bold"
+                  style={{
+                    color: '#013a5a',
+                    borderColor: 'rgba(1, 58, 90, 0.2)',
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.color = '#fff';
+                    (e.currentTarget as HTMLElement).style.borderColor = '#0273a5';
+                    (e.currentTarget as HTMLElement).style.background = '#0273a5';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.color = '#013a5a';
+                    (e.currentTarget as HTMLElement).style.borderColor = 'rgba(1, 58, 90, 0.2)';
+                    (e.currentTarget as HTMLElement).style.background = 'transparent';
+                  }}
+                >
+                  <Icon size={13} />
+                  {label}
+                </a>
+              ))}
             </motion.div>
+          </motion.div>
+
+          {/* scroll hint */}
+          <motion.div
+            className="absolute bottom-7 right-11 flex flex-col items-center gap-2 z-20"
+            style={{ opacity: heroOpacity }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1.6 }}
+          >
+            <span className="text-[8px] tracking-[0.4em] font-bold" style={{ color: 'rgba(1,58,90,0.4)' }}>scroll</span>
+            <motion.div
+              className="w-px h-11"
+              style={{ background: 'linear-gradient(transparent, rgba(1,58,90,0.6))' }}
+              animate={{ scaleY: [1, 0.55, 1], opacity: [1, 0.3, 1] }}
+              transition={{ duration: 2.2, repeat: Infinity }}
+            />
           </motion.div>
         </section>
 
-        {/* === Transition: Surface → Mid === */}
-        <SectionFade fromColor={DEPTH.shallow} toColor={DEPTH.mid} />
-
-        {/* ===== CAREER — Parallax Mid-depth ===== */}
-        <ParallaxSection bgColor={DEPTH.mid} depth="mid">
-          <div className="py-20 px-6">
-            {/* Ambient fish */}
-            <motion.div
-              className="absolute top-[15%] text-xs opacity-[0.08] whitespace-nowrap pointer-events-none"
-              animate={{ x: ['-10%', '110%'] }}
-              transition={{ duration: 28, repeat: Infinity, ease: 'linear', delay: 5 }}
-            >
-              🐟 🐟 🐟 🐟 🐟
-            </motion.div>
-
-            <div className="max-w-2xl mx-auto relative z-10">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                className="flex items-center gap-3 mb-10"
-              >
-                <h2 className="text-2xl font-bold text-slate-200">My Career</h2>
-                <motion.span className="text-lg" animate={{ x: [0, 8, 0], rotate: [0, -5, 0] }} transition={{ duration: 3, repeat: Infinity }}>🐋</motion.span>
-              </motion.div>
-
-              <div className="border-l-2 border-[#6A89A7]/20 pl-6 space-y-10">
-                {timeline.map((item, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -40, filter: 'blur(4px)' }}
-                    whileInView={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
-                    viewport={{ once: true, margin: '-80px' }}
-                    transition={{ delay: index * 0.2, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-                    className="relative group"
-                  >
-                    {/* Timeline dot */}
-                    <motion.div
-                      className="absolute -left-[31px] top-1.5 w-3 h-3 rounded-full bg-[#88BDF2] border-2"
-                      style={{ borderColor: DEPTH.mid }}
-                      whileInView={{ scale: [0, 1.3, 1] }}
-                      viewport={{ once: true }}
-                      transition={{ delay: index * 0.2 + 0.3 }}
-                    />
-                    {/* Pulse ring */}
-                    <motion.div
-                      className="absolute -left-[34px] top-[3px] w-[18px] h-[18px] rounded-full border border-[#88BDF2]"
-                      animate={{ scale: [1, 1.8], opacity: [0.25, 0] }}
-                      transition={{ duration: 2, repeat: Infinity, delay: index * 0.5 }}
-                    />
-                    {/* Floating creature on hover */}
-                    <motion.span
-                      className="absolute -right-10 top-0 text-base opacity-0 group-hover:opacity-40 transition-opacity duration-500"
-                      animate={{ y: [-3, 3, -3], x: [0, -3, 0] }}
-                      transition={{ duration: 2.5, repeat: Infinity }}
+        {/* ══ CONTENT SECTIONS WITH CONTINUOUS GRADIENT ══ */}
+        <div 
+          className="relative" 
+          style={{ 
+            background: `linear-gradient(180deg, ${DEPTH.surface} 0%, ${DEPTH.shallow} 30%, ${DEPTH.mid} 65%, ${DEPTH.deep} 100%)` 
+          }}
+        >
+          {/* ══ CAREER ══ */}
+          <section>
+            <div className="max-w-[940px] mx-auto px-11 py-20 pb-32">
+              <SectionHead num="01 — Career" title="My" italic="Career" />
+              <div className="flex flex-col">
+                {timeline.map((item, i) => (
+                  <Reveal key={i} delay={i * 0.1} x={-16}>
+                    <div
+                      className="grid gap-6 py-8"
+                      style={{
+                        gridTemplateColumns: '128px 1fr',
+                        borderTop: '1px solid rgba(196,221,240,0.04)',
+                      }}
                     >
-                      {item.creature}
-                    </motion.span>
-
-                    <div className="text-xs text-[#88BDF2]/70 mb-1 tracking-wide">{item.date}</div>
-                    <h3 className="text-lg text-slate-100 mb-0.5"><span className="mr-2">{item.icon}</span>{item.title}</h3>
-                    <div className="text-sm text-[#6A89A7]/70 mb-1">{item.role}</div>
-                    <p className="text-sm text-slate-400/80 leading-relaxed">{item.description}</p>
-                  </motion.div>
+                      <p className="text-[9px] leading-loose tracking-[0.12em]" style={{ color: 'rgba(196,221,240,0.35)', paddingTop: 3 }}>
+                        {item.date}
+                      </p>
+                      <div>
+                        <p className="text-[19px] text-[#dceaf7] mb-1" style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700 }}>{item.name}</p>
+                        <p className="text-[9px] tracking-[0.2em] mb-2.5" style={{ color: '#7cc4f0' }}>{item.role}</p>
+                        <p className="text-[11px] leading-loose" style={{ color: 'rgba(196,221,240,0.5)' }}>{item.desc}</p>
+                      </div>
+                    </div>
+                  </Reveal>
                 ))}
               </div>
             </div>
-          </div>
-        </ParallaxSection>
+          </section>
 
-        {/* === Transition === */}
-        <SectionFade fromColor={DEPTH.mid} toColor={DEPTH.deep} />
-
-        {/* ===== TOTAL POSTS — Deep ===== */}
-        <ParallaxSection bgColor={DEPTH.deep} depth="deep">
-          <div className="py-16 px-6 relative">
-            {/* Bioluminescent jellyfish */}
-            <motion.div
-              className="absolute right-[8%] top-[18%] opacity-[0.15] pointer-events-none"
-              animate={{ y: [-12, 12, -12], x: [-6, 6, -6] }}
-              transition={{ duration: 7, repeat: Infinity }}
-            >
-              <div className="relative">
-                <span className="text-2xl">🪼</span>
-                <motion.div
-                  className="absolute inset-0 rounded-full"
-                  style={{ boxShadow: '0 0 25px rgba(136,189,242,0.4)' }}
-                  animate={{ opacity: [0.2, 0.6, 0.2] }}
-                  transition={{ duration: 2.5, repeat: Infinity }}
-                />
-              </div>
-            </motion.div>
-            <motion.div
-              className="absolute left-[5%] bottom-[25%] opacity-[0.06] pointer-events-none"
-              animate={{ y: [-8, 15, -8], x: [3, -5, 3] }}
-              transition={{ duration: 9, repeat: Infinity, delay: 2 }}
-            >
-              <span className="text-xl">🪼</span>
-            </motion.div>
-
-            {/* Sonar rings */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-              {[0, 1, 2].map((i) => (
-                <motion.div
-                  key={`sonar-${i}`}
-                  className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border"
-                  style={{ borderColor: 'rgba(136,189,242,0.04)' }}
-                  animate={{ width: [0, 500], height: [0, 500], opacity: [0.15, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, delay: i * 1.3, ease: 'easeOut' }}
-                />
-              ))}
-            </div>
-
-            <div className="max-w-2xl mx-auto relative z-10">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                className="flex items-baseline gap-3 mb-8"
+          {/* ══ PROJECTS ══ */}
+          <section>
+            <div className="max-w-[940px] mx-auto px-11 py-20 pb-32">
+              <SectionHead num="02 — Projects" title="My" italic="Project" />
+              {/* card grid separated by 1px lines */}
+              <div
+                className="grid"
+                style={{
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                  gap: '1px',
+                  background: 'rgba(196,221,240,0.03)',
+                }}
               >
-                <h2 className="text-2xl font-bold text-slate-200/90">Total Posts</h2>
-                <motion.span
-                  className="text-3xl font-bold text-[#88BDF2]"
-                  initial={{ scale: 0 }}
-                  whileInView={{ scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ type: 'spring', stiffness: 200, delay: 0.3 }}
-                >
-                  {totalPosts}
-                </motion.span>
-                <span className="text-xs text-slate-500/50">articles in the deep</span>
-              </motion.div>
-
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {categoryStats.map((category, index) => (
+                {projects.map((p, i) => (
                   <motion.div
-                    key={category.name}
-                    initial={{ opacity: 0, y: 40, scale: 0.9, filter: 'blur(6px)' }}
-                    whileInView={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                    viewport={{ once: true, margin: '-30px' }}
-                    transition={{
-                      delay: index * 0.1,
-                      duration: 0.6,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    whileHover={{
-                      y: -8,
-                      borderColor: 'rgba(136,189,242,0.35)',
-                      boxShadow: '0 12px 50px rgba(136,189,242,0.08)',
-                    }}
-                    className="relative p-4 border rounded-2xl overflow-hidden group backdrop-blur-sm"
-                    style={{ background: 'rgba(56,73,89,0.25)', borderColor: 'rgba(106,137,167,0.08)' }}
+                    key={i}
+                    className="group cursor-pointer relative overflow-hidden"
+                    style={{ background: 'rgba(7, 15, 26, 0.6)', padding: '32px 28px' }}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true, margin: '-40px' }}
+                    transition={{ delay: i * 0.1, duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ background: 'rgba(7, 15, 26, 0.9)' }}
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <motion.span className="text-lg" whileHover={{ rotate: [0, -10, 10, 0], scale: 1.2 }}>{category.icon}</motion.span>
-                      <span className="text-xl font-bold text-slate-100/90">{category.count}</span>
-                    </div>
-                    <div className="text-xs text-slate-500/60">{category.name}</div>
-                    <div className="mt-3 h-1.5 bg-slate-700/20 rounded-full overflow-hidden">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        whileInView={{ width: `${Math.max((category.count / Math.max(...categoryStats.map(c => c.count))) * 100, 6)}%` }}
-                        viewport={{ once: true }}
-                        transition={{ delay: index * 0.1 + 0.4, duration: 0.8, ease: 'easeOut' }}
-                        className="h-full rounded-full"
-                        style={{ background: 'linear-gradient(90deg, #6A89A7, #88BDF2, #BDDDFC)' }}
-                      />
-                    </div>
+                    {/* bottom glow line on hover */}
                     <motion.div
-                      className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#88BDF2] opacity-0 group-hover:opacity-50"
-                      animate={{ scale: [1, 1.5, 1], opacity: [0.5, 0.15, 0.5] }}
-                      transition={{ duration: 1.5, repeat: Infinity }}
+                      className="absolute bottom-0 left-0 right-0 h-px"
+                      style={{ background: 'linear-gradient(90deg, transparent, #5ba3cc, transparent)', scaleX: 0 }}
+                      whileHover={{ scaleX: 1 }}
+                      transition={{ duration: 0.4 }}
                     />
+                    <p className="text-[8px] tracking-[0.3em] mb-3.5" style={{ color: 'rgba(196,221,240,0.18)' }}>{p.idx}</p>
+                    <motion.p
+                      className="text-[19px] text-[#c4ddf0] mb-3 leading-snug"
+                      style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700 }}
+                      whileHover={{ color: '#5ba3cc' }}
+                      transition={{ duration: 0.25 }}
+                    >
+                      {p.name}
+                    </motion.p>
+                    <p className="text-[11px] leading-loose mb-4.5" style={{ color: 'rgba(196,221,240,0.32)' }}>{p.desc}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.tags.map(tag => (
+                        <span
+                          key={tag}
+                          className="text-[8px] tracking-[0.16em] border px-2.5 py-0.5"
+                          style={{ color: 'rgba(196,221,240,0.25)', borderColor: 'rgba(196,221,240,0.1)' }}
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
                   </motion.div>
                 ))}
               </div>
             </div>
-          </div>
-        </ParallaxSection>
+          </section>
 
-        {/* === Transition === */}
-        <SectionFade fromColor={DEPTH.deep} toColor={DEPTH.abyss} />
-
-        {/* ===== PROJECT — Abyss ===== */}
-        <ParallaxSection bgColor={DEPTH.abyss} depth="abyss">
-          <div className="py-20 px-6 relative">
-            {/* Bioluminescent particles */}
-            {[...Array(10)].map((_, i) => (
-              <motion.div
-                key={`abyss-${i}`}
-                className="absolute rounded-full pointer-events-none"
-                style={{
-                  width: 1.5 + Math.random() * 3,
-                  height: 1.5 + Math.random() * 3,
-                  left: `${Math.random() * 100}%`,
-                  top: `${Math.random() * 100}%`,
-                  background: `rgba(136,189,242,${0.04 + Math.random() * 0.06})`,
-                  boxShadow: `0 0 ${4 + Math.random() * 8}px rgba(136,189,242,${0.03 + Math.random() * 0.04})`,
-                }}
-                animate={{
-                  y: [0, -(5 + Math.random() * 10), 0],
-                  opacity: [0.05, 0.25, 0.05],
-                }}
-                transition={{ duration: 5 + Math.random() * 5, repeat: Infinity, delay: Math.random() * 5 }}
-              />
-            ))}
-
-            {/* Searchlight sweep */}
-            <motion.div
-              className="absolute inset-0 pointer-events-none"
-              style={{ background: 'radial-gradient(ellipse 35% 45% at 50% 50%, rgba(136,189,242,0.015) 0%, transparent 70%)' }}
-              animate={{
-                background: [
-                  'radial-gradient(ellipse 35% 45% at 38% 42%, rgba(136,189,242,0.015) 0%, transparent 70%)',
-                  'radial-gradient(ellipse 35% 45% at 62% 58%, rgba(136,189,242,0.015) 0%, transparent 70%)',
-                  'radial-gradient(ellipse 35% 45% at 38% 42%, rgba(136,189,242,0.015) 0%, transparent 70%)',
-                ],
-              }}
-              transition={{ duration: 12, repeat: Infinity }}
-            />
-
-            <div className="max-w-2xl mx-auto relative z-10">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: '-50px' }}
-                className="flex items-center gap-3 mb-8"
-              >
-                <h2 className="text-2xl font-bold text-slate-200/80">My Project</h2>
-                <motion.span animate={{ rotate: [0, 10, -10, 0], y: [0, -2, 0] }} transition={{ duration: 4, repeat: Infinity }}>🧭</motion.span>
-                <motion.span
-                  className="text-xs text-slate-600/40 italic"
-                  animate={{ opacity: [0, 0.4, 0] }}
-                  transition={{ duration: 4, repeat: Infinity, delay: 2 }}
-                >
-                  treasure found!
-                </motion.span>
-              </motion.div>
-
-              {/* Project card with dramatic reveal */}
-              <motion.div
-                initial={{ opacity: 0, y: 50, scale: 0.92, filter: 'blur(8px)' }}
-                whileInView={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
-                viewport={{ once: true, margin: '-60px' }}
-                transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={{
-                  borderColor: 'rgba(136,189,242,0.4)',
-                  boxShadow: '0 0 60px rgba(136,189,242,0.06)',
-                }}
-                className="relative p-8 border rounded-2xl overflow-hidden backdrop-blur-sm"
-                style={{
-                  background: 'linear-gradient(135deg, rgba(56,73,89,0.35) 0%, rgba(36,61,80,0.25) 100%)',
-                  borderColor: 'rgba(106,137,167,0.15)',
-                }}
-              >
-                {/* Sparkles */}
-                {[
-                  { left: '85%', top: '15%', delay: 0 },
-                  { left: '92%', top: '65%', delay: 1.5 },
-                  { left: '8%', top: '80%', delay: 3 },
-                  { left: '15%', top: '10%', delay: 4.5 },
-                ].map((pos, i) => (
-                  <motion.div
-                    key={`sparkle-${i}`}
-                    className="absolute text-[10px] text-[#BDDDFC]/25"
-                    style={{ left: pos.left, top: pos.top }}
-                    animate={{ opacity: [0, 0.8, 0], scale: [0.5, 1, 0.5], rotate: [0, 180] }}
-                    transition={{ duration: 2.5, repeat: Infinity, delay: pos.delay }}
-                  >
-                    ✦
-                  </motion.div>
-                ))}
-
-                <motion.div
-                  initial={{ opacity: 0, x: -15 }}
-                  whileInView={{ opacity: 1, x: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.2 }}
-                  className="flex items-center gap-2 mb-4"
-                >
-                  <Award className="w-4 h-4 text-[#88BDF2]/70" />
-                  <motion.span
-                    className="text-xs text-[#88BDF2]/60 tracking-wide"
-                    animate={{ opacity: [0.5, 0.8, 0.5] }}
-                    transition={{ duration: 2, repeat: Infinity }}
-                  >
-                    {project.badge}
-                  </motion.span>
-                </motion.div>
-
-                <motion.h3
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.3 }}
-                  className="text-xl text-slate-100/90 mb-2"
-                >
-                  {project.title}
-                </motion.h3>
-
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.4 }}
-                  className="text-sm text-slate-400/60 mb-5 leading-relaxed"
-                >
-                  {project.description}
-                </motion.p>
-
-                <div className="flex flex-wrap gap-2">
-                  {project.tags.map((tag, i) => (
-                    <motion.span
-                      key={tag}
-                      className="px-3 py-1.5 text-xs text-[#BDDDFC]/70 rounded-full border"
-                      style={{ background: 'rgba(106,137,167,0.08)', borderColor: 'rgba(106,137,167,0.12)' }}
-                      whileHover={{ scale: 1.05, borderColor: 'rgba(136,189,242,0.3)' }}
-                      initial={{ opacity: 0, x: -10 }}
-                      whileInView={{ opacity: 1, x: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ delay: 0.5 + i * 0.1 }}
+          {/* ══ BLOG ══ */}
+          <section>
+            <div className="max-w-[940px] mx-auto px-11 py-20 pb-32">
+              <SectionHead num="03 — Blog" title="Recent" italic="Posts" />
+              <div className="flex flex-col">
+                {posts.map((post, i) => (
+                  <Reveal key={i} delay={i * 0.08}>
+                    <motion.div
+                      className="grid py-6 cursor-pointer group"
+                      style={{
+                        gridTemplateColumns: '94px 1fr 60px',
+                        gap: '20px',
+                        borderTop: '1px solid rgba(196,221,240,0.04)',
+                      }}
+                      whileHover={{ x: 4 }}
+                      transition={{ duration: 0.25 }}
                     >
-                      {tag}
-                    </motion.span>
-                  ))}
-                </div>
-              </motion.div>
+                      <p className="text-[9px] tracking-[0.1em] leading-loose pt-0.5" style={{ color: 'rgba(196,221,240,0.2)' }}>
+                        {post.date}
+                      </p>
+                      <div>
+                        <p className="text-[8px] tracking-[0.24em] mb-1.5" style={{ color: '#5ba3cc' }}>{post.cat}</p>
+                        <motion.p
+                          className="text-[15px] text-[#c4ddf0] mb-1 leading-snug"
+                          style={{ fontFamily: "'Syne', sans-serif", fontWeight: 700 }}
+                          whileHover={{ color: '#5ba3cc' }}
+                          transition={{ duration: 0.22 }}
+                        >
+                          {post.title}
+                        </motion.p>
+                        <p className="text-[10px] leading-loose" style={{ color: 'rgba(196,221,240,0.28)' }}>{post.excerpt}</p>
+                      </div>
+                      <p className="text-[9px] text-right pt-0.5" style={{ color: 'rgba(196,221,240,0.16)' }}>{post.time}</p>
+                    </motion.div>
+                  </Reveal>
+                ))}
+              </div>
             </div>
-          </div>
-        </ParallaxSection>
-
-        {/* === Final Transition === */}
-        <SectionFade fromColor={DEPTH.abyss} toColor={DEPTH.trench} />
+          </section>
+        </div>
 
         <OceanFloor />
       </div>
     </>
-  );
-}
-
-function AnimatedQuote({ show, text }: { show: boolean; text: string }) {
-  return (
-    <motion.div
-      className="absolute -top-2 left-1/2 -translate-x-1/2 px-4 py-2 rounded-xl text-xs whitespace-nowrap pointer-events-none z-20"
-      style={{ backgroundColor: 'rgba(189,221,252,0.9)', color: '#384959' }}
-      initial={false}
-      animate={{ opacity: show ? 1 : 0, y: show ? -12 : 0, scale: show ? 1 : 0.8 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-    >
-      {text}
-      <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 rotate-45" style={{ backgroundColor: 'rgba(189,221,252,0.9)' }} />
-    </motion.div>
   );
 }
