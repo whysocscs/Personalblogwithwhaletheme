@@ -2,7 +2,7 @@ import { motion } from 'motion/react';
 
 export function OceanFloor() {
   return (
-    <footer className="relative py-16 px-6 overflow-hidden bg-gradient-to-b from-[#384959] to-[#1a2a38]">
+    <footer className="relative py-16 px-6 overflow-hidden bg-gradient-to-b from-[#0e1f2d] to-[#080f16]">
       {/* Sandy bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#4a5a3a]/20 to-transparent" />
 

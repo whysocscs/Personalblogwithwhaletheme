@@ -1,8 +1,8 @@
 import { motion } from 'motion/react';
-import { Calendar, Clock, ArrowRight } from 'lucide-react';
+import { Calendar, Clock, ArrowRight, Search, X } from 'lucide-react';
 import { SwimmingWhales } from '../components/SwimmingWhales';
 import { OceanFloor } from '../components/OceanFloor';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 
 const categoryCreatures: Record<string, { emoji: string; animDelay: number }> = {
   All: { emoji: '🐋', animDelay: 0 },
@@ -26,6 +26,8 @@ const postCreatures: Record<string, string> = {
 
 export function Blog() {
   const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   const categories = [
     { name: 'All Posts', slug: 'All' },
@@ -47,10 +49,21 @@ export function Blog() {
     { id: 6, title: '정보보호 컨퍼런스 참석 후기', excerpt: '최신 보안 트렌드와 연구 동향을 파악한 컨퍼런스 참석 경험을 나눕니다.', date: '2026-03-08', readTime: '5 min', category: 'Contest-Certification' },
   ];
 
-  const filteredPosts = selectedCategory === 'All' ? posts : posts.filter(p => p.category === selectedCategory);
+  const filteredPosts = useMemo(() => {
+    let result = selectedCategory === 'All' ? posts : posts.filter(p => p.category === selectedCategory);
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(p =>
+        p.title.toLowerCase().includes(q) ||
+        p.excerpt.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [selectedCategory, searchQuery]);
 
   return (
-    <div className="min-h-screen bg-[#384959] relative">
+    <div className="min-h-screen bg-gradient-to-b from-[#3d5f78] via-[#304d63] to-[#243d50] relative">
       <SwimmingWhales />
 
       {/* Hero Section */}
@@ -76,18 +89,75 @@ export function Blog() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
-            className="text-xl text-slate-300"
+            className="text-xl text-slate-300 mb-8"
           >
             개발하며 배운 것들을 기록합니다
           </motion.p>
+
+          {/* Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="max-w-lg mx-auto relative"
+          >
+            <motion.div
+              className="relative flex items-center"
+              animate={isSearchFocused ? {
+                boxShadow: '0 0 30px rgba(136,189,242,0.15)',
+              } : {
+                boxShadow: '0 0 0px rgba(136,189,242,0)',
+              }}
+              style={{ borderRadius: 16 }}
+            >
+              <Search className="absolute left-4 w-4 h-4 text-slate-500 pointer-events-none" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onBlur={() => setIsSearchFocused(false)}
+                placeholder="바다 속에서 글 찾기... 🔍"
+                className="w-full pl-11 pr-10 py-3.5 bg-[#2d3d4d]/80 backdrop-blur-sm border border-[#6A89A7]/25 rounded-2xl text-sm text-slate-200 placeholder-slate-500 outline-none focus:border-[#88BDF2]/50 transition-colors"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 text-slate-500 hover:text-slate-300 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </motion.div>
+            {/* Search bubbles decoration */}
+            {isSearchFocused && (
+              <>
+                {[...Array(4)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute rounded-full bg-[#BDDDFC]/10 border border-[#BDDDFC]/15"
+                    style={{
+                      width: 4 + i * 3,
+                      height: 4 + i * 3,
+                      right: `${-10 + i * 8}%`,
+                      bottom: `${80 + i * 10}%`,
+                    }}
+                    initial={{ opacity: 0, y: 0 }}
+                    animate={{ opacity: [0, 0.5, 0], y: -30 - i * 10 }}
+                    transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.3 }}
+                  />
+                ))}
+              </>
+            )}
+          </motion.div>
         </div>
       </section>
 
-      {/* Categories and Posts Section */}
+      {/* Categories and Posts */}
       <section className="px-6 pb-20">
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col lg:flex-row gap-8">
-            {/* Left Sidebar - Categories with sea creatures */}
+            {/* Sidebar */}
             <motion.div
               initial={{ opacity: 0, x: -30 }}
               animate={{ opacity: 1, x: 0 }}
@@ -126,22 +196,14 @@ export function Blog() {
                           {creature && (
                             <motion.span
                               className={`text-sm transition-opacity ${isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'}`}
-                              animate={isSelected ? {
-                                y: [-2, 2, -2],
-                                rotate: [-5, 5, -5],
-                              } : {}}
-                              transition={{
-                                duration: 2,
-                                repeat: Infinity,
-                                delay: creature.animDelay,
-                              }}
+                              animate={isSelected ? { y: [-2, 2, -2], rotate: [-5, 5, -5] } : {}}
+                              transition={{ duration: 2, repeat: Infinity, delay: creature.animDelay }}
                             >
                               {creature.emoji}
                             </motion.span>
                           )}
                         </motion.button>
 
-                        {/* Subcategories */}
                         {category.subcategories && isSelected && (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
@@ -167,7 +229,7 @@ export function Blog() {
                   })}
                 </div>
 
-                {/* Decorative seaweed at bottom of sidebar */}
+                {/* Decorative bottom */}
                 <div className="mt-8 flex justify-center gap-3 opacity-20">
                   {['🌿', '🪸', '🌊'].map((plant, i) => (
                     <motion.span
@@ -183,28 +245,28 @@ export function Blog() {
               </div>
             </motion.div>
 
-            {/* Right Side - Blog Posts */}
+            {/* Posts */}
             <div className="flex-1">
-              {/* Post count */}
-              <motion.div
-                className="mb-6 text-sm text-slate-500"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {filteredPosts.length}개의 글이 바다 속에 있어요
+              <motion.div className="mb-6 flex items-center justify-between" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                <span className="text-sm text-slate-500">
+                  {searchQuery
+                    ? `"${searchQuery}" 검색 결과: ${filteredPosts.length}개`
+                    : `${filteredPosts.length}개의 글이 바다 속에 있어요`
+                  }
+                </span>
               </motion.div>
 
               <div className="grid md:grid-cols-2 gap-6">
                 {filteredPosts.map((post, index) => (
                   <motion.article
                     key={post.id}
-                    initial={{ opacity: 0, y: 30 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{ y: -8 }}
+                    initial={{ opacity: 0, y: 40, scale: 0.92, filter: 'blur(6px)' }}
+                    animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
+                    transition={{ delay: index * 0.12, duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                    whileHover={{ y: -8, boxShadow: '0 16px 60px rgba(136,189,242,0.1)' }}
                     className="group relative p-6 bg-[#384959]/30 backdrop-blur-sm border border-[#88BDF2]/20 rounded-3xl hover:border-[#88BDF2]/40 hover:shadow-xl hover:shadow-[#88BDF2]/10 transition-all cursor-pointer overflow-hidden"
                   >
-                    {/* Floating creature in corner */}
+                    {/* Floating creature */}
                     <motion.span
                       className="absolute top-4 right-4 text-lg opacity-0 group-hover:opacity-30 transition-opacity duration-500"
                       animate={{ y: [-3, 3, -3], rotate: [-5, 5, -5] }}
@@ -213,13 +275,9 @@ export function Blog() {
                       {postCreatures[post.category] || '🐟'}
                     </motion.span>
 
-                    {/* Subtle bubble on hover */}
-                    <motion.div
-                      className="absolute -bottom-3 -right-3 w-8 h-8 rounded-full bg-[#BDDDFC]/5 border border-[#BDDDFC]/10 opacity-0 group-hover:opacity-100 transition-opacity"
-                    />
-                    <motion.div
-                      className="absolute bottom-6 right-8 w-4 h-4 rounded-full bg-[#BDDDFC]/5 border border-[#BDDDFC]/10 opacity-0 group-hover:opacity-100 transition-opacity delay-100"
-                    />
+                    {/* Hover bubbles */}
+                    <motion.div className="absolute -bottom-3 -right-3 w-8 h-8 rounded-full bg-[#BDDDFC]/5 border border-[#BDDDFC]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    <motion.div className="absolute bottom-6 right-8 w-4 h-4 rounded-full bg-[#BDDDFC]/5 border border-[#BDDDFC]/10 opacity-0 group-hover:opacity-100 transition-opacity delay-100" />
 
                     <div className="flex items-center gap-2 mb-4">
                       <span className="inline-block px-3 py-1 text-xs bg-[#88BDF2]/10 text-[#BDDDFC] border border-[#88BDF2]/30 rounded-full">
@@ -230,7 +288,6 @@ export function Blog() {
                     <h2 className="text-xl font-bold text-slate-100 mb-3 group-hover:text-[#BDDDFC] transition-colors leading-snug">
                       {post.title}
                     </h2>
-
                     <p className="text-slate-400 mb-4 line-clamp-2 text-sm leading-relaxed">{post.excerpt}</p>
 
                     <div className="flex items-center justify-between text-xs text-slate-500 mb-4">
@@ -254,11 +311,7 @@ export function Blog() {
 
               {/* Empty state */}
               {filteredPosts.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  className="text-center py-20"
-                >
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
                   <motion.span
                     className="text-4xl block mb-4"
                     animate={{ y: [-5, 5, -5] }}
@@ -266,7 +319,17 @@ export function Blog() {
                   >
                     🐡
                   </motion.span>
-                  <p className="text-slate-500">아직 이 바다에는 글이 없어요...</p>
+                  <p className="text-slate-500">
+                    {searchQuery ? `"${searchQuery}"에 해당하는 글을 찾지 못했어요...` : '아직 이 바다에는 글이 없어요...'}
+                  </p>
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="mt-4 text-sm text-[#88BDF2] hover:text-[#BDDDFC] transition-colors"
+                    >
+                      검색어 지우기
+                    </button>
+                  )}
                 </motion.div>
               )}
             </div>
@@ -274,7 +337,6 @@ export function Blog() {
         </div>
       </section>
 
-      {/* Footer */}
       <OceanFloor />
     </div>
   );
